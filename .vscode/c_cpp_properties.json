@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/Cellar/glfw/3.3.4/include"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "cStandard": "gnu17",
+            "intelliSenseMode": "macos-gcc-x64",
+            "compilerPath": "/usr/bin/clang++"
+        }
+    ],
+    "version": 4
+}
