@@ -106,21 +106,30 @@ int main()
 
     // 创建顶点数据
     // -----------
+    // 4个顶点坐标和三角形
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
+         0.5f, 0.5f, 0.0f,
          0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+        -0.5f, -0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f
     };
-    // 顶点缓冲对象, 顶点数组对象
-    unsigned int VBO, VAO;
+    unsigned int indices[] = {
+        0, 1, 3, // 第一个三角形
+        1, 2, 3  // 第二个三角形
+    };
+    // 索引缓冲对象(element buffer object), 顶点缓冲对象, 顶点数组对象
+    unsigned int VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &EBO);
     glGenBuffers(1, &VBO);
     // 绑定顶点数组
     glBindVertexArray(VAO);
-    // 缓冲绑定到VBO
+    // 绑定数组缓冲, 复制数据
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // 将顶点数据复制到缓冲区供使用
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // 绑定索引缓冲, 复制数据
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // 解析顶点属性
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
     // 启用顶点属性
@@ -145,8 +154,8 @@ int main()
         // 绘制三角形
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        // 第二个参数是顶点数组的起始索引, 第二个是绘制多少个顶点
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // 第二个参数是绘制多少个顶点
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // 将缓冲区的像素颜色值绘制到窗口
         glfwSwapBuffers(window);
