@@ -12,20 +12,21 @@
 教程: <https://learnopengl-cn.github.io/>
 
 <a id="markdown-环境配置" name="环境配置"></a>
-#### 环境配置
+### 环境配置
 
 环境: MacOS  
 编辑器: VSCode
 
 <a id="markdown-1-创建项目" name="1-创建项目"></a>
-##### 1. 创建项目
+#### 1. 创建项目
 
 新建一个文件夹作为项目路径, 在VSCode里打开, 在这个路径下新建一个include文件夹, 之后会往里面放依赖包
 
 <a id="markdown-2-安装依赖" name="2-安装依赖"></a>
-##### 2. 安装依赖
+#### 2. 安装依赖
 
 - glfw  
+  GLFW是一个专门针对OpenGL的C语言库，它提供了一些渲染物体所需的最低限度的接口。它允许用户创建OpenGL上下文，定义窗口参数以及处理用户输入，这正是我们需要的.  
   `brew install glfw`  
   安装的过程中可以看到安装地址和版本, 例如我安装的时候显示:  
   `/usr/local/Cellar/glfw/3.3.4: 14 files, 520.9KB`
@@ -36,7 +37,7 @@
   然后点击GENERATE生成, 下载glad.zip压缩文件到本地, 解压缩, 将include里的glad和KHR两个文件夹复制到项目里的include路径下, 然后将src下的glad.c文件复制到项目根目录下.
 
 <a id="markdown-3-创建maincpp文件" name="3-创建maincpp文件"></a>
-##### 3. 创建main.cpp文件
+#### 3. 创建main.cpp文件
 
 ```C++
 #include <glad/glad.h>
@@ -62,7 +63,7 @@ compile path选择`/usr/bin/clang++`
 然后我们看到main.cpp文件里的红色错误提示没有了, 然后也能做文件和函数跳转了
 
 <a id="markdown-4-编译" name="4-编译"></a>
-##### 4. 编译
+#### 4. 编译
 
 这里采用cmake来编译  
 如何安装这里不表, 可以搜到.  
@@ -112,7 +113,7 @@ $ make
 我们按照教程修改main.cpp文件, 接着往下看...
 
 <a id="markdown-4-第一个窗口" name="4-第一个窗口"></a>
-##### 4. 第一个窗口
+#### 4. 第一个窗口
 
 按照教程一步步修改main.cpp文件, 如下所示意:
 ```C++
