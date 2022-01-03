@@ -39,7 +39,7 @@ public:
       fShaderFile.close();
       // 转换数据流到string
       vertexCode = vShaderStream.str();
-      fragmentCode = vShaderStream.str();
+      fragmentCode = fShaderStream.str();
     }
     catch(std::ifstream::failure e)
     {
@@ -51,44 +51,27 @@ public:
     // 2. 编译着色器
     // ------------
     unsigned int vertex, fragment;
-    int success;
-    char infoLog[512];
     // 顶点着色器
     vertex = glCreateShader(GL_VERTEX_SHADER);
     // 第二个参数是源代码字符串数量
     glShaderSource(vertex, 1, &vShaderCode, NULL);
     glCompileShader(vertex);
     // 打印编译错误(如果有的话)
-    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-      glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-      std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    };
+    checkCompileErrors(vertex, "VERTEX");
     // 片段着色器
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     // 第二个参数是源代码字符串数量
     glShaderSource(fragment, 1, &fShaderCode, NULL);
     glCompileShader(fragment);
     // 打印编译错误(如果有的话)
-    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-      glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-      std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    };
+    checkCompileErrors(fragment, "FRAGMENT");
     // 着色器程序
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
     // 打印连接错误(如果有的话)
-    glGetProgramiv(ID, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-      glGetProgramInfoLog(fragment, 512, NULL, infoLog);
-      std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
+    checkCompileErrors(ID, "PROGRAM");
     // 删除着色器, 它们已经链接到我们的程序中了, 已经不再需要了
     glDeleteShader(vertex);
     glDeleteShader(fragment);
@@ -111,6 +94,30 @@ public:
   {
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
   }
-};
 
+private:
+  void checkCompileErrors(unsigned int shader, std::string type)
+  {
+    int success;
+    char infoLog[1024];
+    if (type != "PROGRAM")
+    {
+      glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+      if (!success)
+      {
+        glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+        std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" <<infoLog << "\n -- ------------------------------ -- " << std::endl;
+      }
+    }
+    else
+    {
+      glGetProgramiv(shader, GL_LINK_STATUS, &success);
+      if (!success)
+      {
+        glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+        std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" <<infoLog << "\n -- ------------------------------ -- " << std::endl;
+      }
+    }
+  }
+};
 #endif
