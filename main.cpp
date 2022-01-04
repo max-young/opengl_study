@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <Shader.h>
+#include <stb_image.h>
 
 #include <iostream>
 #include <math.h>
@@ -53,14 +54,36 @@ int main()
 
     Shader ourShader("../shader/shader.vs", "../shader/shader.fs");
 
+    // 创建纹理
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // 读取纹理文件
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("../resource/texture/container.jpeg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
     // 创建顶点数据
     // -----------
     // 4个顶点坐标和三角形
     float vertices[] = {
-         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f
+         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
     };
     unsigned int indices[] = {
         0, 1, 3, // 第一个三角形
@@ -80,13 +103,17 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // 解析顶点位置属性
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
     // 启用顶点位置属性
     glEnableVertexAttribArray(0);
     // 解析顶点颜色属性
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
     // 启用顶点颜色属性
     glEnableVertexAttribArray(1);
+    // 解析顶点纹理坐标属性
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
+    // 启用顶点颜色属性
+    glEnableVertexAttribArray(2);
     // 解绑
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -111,6 +138,7 @@ int main()
         ourShader.setFloat("ourColor", greenValue);
 
         // 绘制三角形
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

@@ -14,7 +14,7 @@ set(GLFW_LINK /usr/local/Cellar/glfw/3.3.4/lib/libglfw.3.dylib)
 link_libraries(${GLFW_LINK})
 
 # 执行编译命令
-set(SOURCES glad.c main.cpp)
+set(SOURCES main.cpp src/glad.c src/stb_image.cpp)
 add_executable(HelloGL ${SOURCES})
 
 # 链接系统的 OpenGL 框架
