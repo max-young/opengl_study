@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <Shader.h>
 #include <stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <math.h>
@@ -167,6 +170,14 @@ int main()
         float timeValue = glfwGetTime();
         float greenValue = sin(timeValue) / 2.0f + 0.5f;
         ourShader.setFloat("ourColor", greenValue);
+
+        glm::mat4 trans = glm::mat4(1.0f);
+        // trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        // trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
         // 绘制三角形
         glBindVertexArray(VAO);
