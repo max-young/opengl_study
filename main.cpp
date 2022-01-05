@@ -184,11 +184,11 @@ int main()
   unsigned int VAO, VBO;
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
-  // 绑定顶点数组
-  glBindVertexArray(VAO);
   // 绑定数组缓冲, 复制数据到VBO供GPU使用
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  // 绑定顶点数组
+  glBindVertexArray(VAO);
   // 解析顶点位置属性, 这些数据会放到VAO里面, 供GPU使用
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
   // 启用顶点位置属性
@@ -197,9 +197,9 @@ int main()
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
   // 启用顶点颜色属性
   glEnableVertexAttribArray(1);
-  // 解绑
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
+  // // 解绑
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // glBindVertexArray(0);
 
   // 光源顶点数组对象
   unsigned int lampVAO;
@@ -208,8 +208,6 @@ int main()
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
 
   lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
   lightShader.setVec3("lightColor", 1.0f, 1.0f, 01.0f);
@@ -249,15 +247,15 @@ int main()
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // lampShader.use();
+    lampShader.use();
     model = glm::mat4(1.0f);
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
     model = glm::translate(model, lightPosition);
+    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
     model = glm::scale(model, glm::vec3(0.2f));
     lightShader.setMat4("model", model);
-    // lampShader.setMat4("view", view);
-    // lampShader.setMat4("projection", projection);
-    // glBindVertexArray(lampVAO);
+    lampShader.setMat4("view", view);
+    lampShader.setMat4("projection", projection);
+    glBindVertexArray(lampVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // 将缓冲区的像素颜色值绘制到窗口
