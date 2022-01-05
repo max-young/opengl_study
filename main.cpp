@@ -11,6 +11,9 @@
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
+// 鼠标回调函数, xpos和ypos是鼠标当前位置
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -22,6 +25,13 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
+
+// 鼠标的初始位置, 屏幕中心
+float lastX = SCR_WIDTH / 2, lastY = SCR_HEIGHT / 2;
+bool firstMouse = true;
+float yaw = -90.0f;
+float pitch = 0.0f;
+float fov = 45.0f;
 
 int main()
 {
@@ -52,6 +62,10 @@ int main()
   // 回调函数, 注册这个函数，告诉GLFW我们希望每当窗口调整大小的时候调用这个函数
   // 这个函数将窗口大小和视口大小保持一致
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  // 设置接受鼠标输入, 并且在窗口不显示光标
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  // glfwSetCursorPosCallback(window, mouse_callback);
+  // glfwSetScrollCallback(window, scroll_callback);
 
   // 调用OpenGL函数之前需要初始化glad2
   // ------------------------------
@@ -60,6 +74,8 @@ int main()
     std::cout << "Failed to initialize GLAD" << std::endl;
     return -1;
   }
+
+  glEnable(GL_DEPTH_TEST);
 
   Shader ourShader("../shader/shader.vs", "../shader/shader.fs");
 
@@ -108,7 +124,7 @@ int main()
   stbi_image_free(data);
 
   ourShader.use();
-  glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
+  ourShader.setInt("texture1", 0);
   ourShader.setInt("texture2", 1);
 
   // 创建顶点数据
@@ -202,10 +218,8 @@ int main()
     // -------
     // 清空颜色缓冲并填充为深蓝绿色
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1);
@@ -220,12 +234,10 @@ int main()
 
     // 变换
     // ----
-    glm::mat4 view;
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     ourShader.setMat4("view", view);
     // projection matrix
-    glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     ourShader.setMat4("projection", projection);
 
     // 绘制三角形
@@ -245,6 +257,9 @@ int main()
     // 检查有没有触发事件
     glfwPollEvents();
   }
+
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &VBO);
 
   // 释放资源
   glfwTerminate();
@@ -275,4 +290,46 @@ void processInput(GLFWwindow *window)
     cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+{
+  if (firstMouse)
+  {
+    lastX = xpos;
+    lastY = ypos;
+    firstMouse = false;
+  }
+  
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos;
+  lastX = xpos;
+  lastY = ypos;
+
+  float sensitivity = 0.1f;
+  xoffset *= sensitivity;
+  yoffset *= sensitivity;
+
+  yaw += xoffset;
+  pitch += yoffset;
+
+  if (pitch > 89.0f)
+    pitch = 89.0f;
+  if (pitch < -89.0f)
+    pitch = -89.0f;
+  
+  glm::vec3 front;
+  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+  front.y = sin(glm::radians(pitch));
+  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+  cameraFront = glm::normalize(front);
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+  fov -= yoffset;
+  if (fov <= 1.0f)
+    fov = 1.0f;
+  if (fov >= 45.0f)
+    fov = 45.0f;
 }
