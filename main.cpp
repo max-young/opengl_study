@@ -28,6 +28,8 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2, lastY = SCR_HEIGHT / 2;
 bool firstMouse = true;
 
+glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
+
 int main()
 {
   // 初始化和配置
@@ -72,7 +74,8 @@ int main()
 
   glEnable(GL_DEPTH_TEST);
 
-  Shader ourShader("../shader/shader.vs", "../shader/shader.fs");
+  Shader lightShader("../shader/shader.vs", "../shader/lightshader.fs");
+  Shader lampShader("../shader/shader.vs", "../shader/lampShader.fs");
 
   // 创建纹理
   // -------
@@ -118,9 +121,9 @@ int main()
   }
   stbi_image_free(data);
 
-  ourShader.use();
-  ourShader.setInt("texture1", 0);
-  ourShader.setInt("texture2", 1);
+  lightShader.use();
+  lightShader.setInt("texture1", 0);
+  lightShader.setInt("texture2", 1);
 
   // 创建顶点数据
   // 立方体的36个顶点坐标和其纹理坐标
@@ -183,10 +186,10 @@ int main()
   glGenBuffers(1, &VBO);
   // 绑定顶点数组
   glBindVertexArray(VAO);
-  // 绑定数组缓冲, 复制数据
+  // 绑定数组缓冲, 复制数据到VBO供GPU使用
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  // 解析顶点位置属性
+  // 解析顶点位置属性, 这些数据会放到VAO里面, 供GPU使用
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
   // 启用顶点位置属性
   glEnableVertexAttribArray(0);
@@ -197,6 +200,19 @@ int main()
   // 解绑
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+
+  // 光源顶点数组对象
+  unsigned int lampVAO;
+  glGenVertexArrays(1, &lampVAO);
+  glBindVertexArray(lampVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+  lightShader.setVec3("lightColor", 1.0f, 1.0f, 01.0f);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // -------------------------------
@@ -221,32 +237,29 @@ int main()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture2);
 
-    ourShader.use();
-
-    float timeValue = glfwGetTime();
-    float greenValue = sin(timeValue) / 2.0f + 0.5f;
-    ourShader.setFloat("ourColor", greenValue);
-
-    // 变换
-    // ----
+    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
-    ourShader.setMat4("view", view);
-    // projection matrix
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    ourShader.setMat4("projection", projection);
 
-    // 绘制三角形
+    lightShader.use();
+    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(40.0f), glm::vec3(1.0f, 0.3f, 0.5f));
+    lightShader.setMat4("model", model);
+    lightShader.setMat4("view", view);
+    lightShader.setMat4("projection", projection);
     glBindVertexArray(VAO);
-    for (unsigned int i = 0; i < 10; i++)
-    {
-      glm::mat4 model = glm::mat4(1.0f);
-      model = glm::translate(model, cubePositions[i]);
-      float angle = 20.0f * (i + 1);
-      model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-      ourShader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
-      glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+    // lampShader.use();
+    model = glm::mat4(1.0f);
+    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
+    model = glm::translate(model, lightPosition);
+    model = glm::scale(model, glm::vec3(0.2f));
+    lightShader.setMat4("model", model);
+    // lampShader.setMat4("view", view);
+    // lampShader.setMat4("projection", projection);
+    // glBindVertexArray(lampVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
     // 检查有没有触发事件
@@ -254,6 +267,7 @@ int main()
   }
 
   glDeleteVertexArrays(1, &VAO);
+  glDeleteVertexArrays(1, &lampVAO);
   glDeleteBuffers(1, &VBO);
 
   // 释放资源
