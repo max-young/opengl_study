@@ -24,7 +24,7 @@ float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
 // 鼠标的初始位置, 屏幕中心
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 6.0f));
 float lastX = SCR_WIDTH / 2, lastY = SCR_HEIGHT / 2;
 bool firstMouse = true;
 
@@ -197,17 +197,18 @@ int main()
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
   // 启用顶点颜色属性
   glEnableVertexAttribArray(1);
-  // // 解绑
-  // glBindBuffer(GL_ARRAY_BUFFER, 0);
-  // glBindVertexArray(0);
 
   // 光源顶点数组对象
   unsigned int lampVAO;
   glGenVertexArrays(1, &lampVAO);
-  glBindVertexArray(lampVAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBindVertexArray(lampVAO);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
+
+  // 解绑
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
 
   lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
   lightShader.setVec3("lightColor", 1.0f, 1.0f, 01.0f);
