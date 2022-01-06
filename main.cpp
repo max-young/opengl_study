@@ -23,12 +23,11 @@ const unsigned int SCR_HEIGHT = 600;
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
-// 鼠标的初始位置, 屏幕中心
-Camera camera(glm::vec3(0.0f, 0.0f, 6.0f));
-float lastX = SCR_WIDTH / 2, lastY = SCR_HEIGHT / 2;
+Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
+float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
-glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
+glm::vec3 lightPosition(2.0f, 2.0f, -1.0f);
 
 int main()
 {
@@ -193,15 +192,14 @@ int main()
   glGenVertexArrays(1, &lampVAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBindVertexArray(lampVAO);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 
   // 解绑
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-  lightShader.setVec3("lightColor", 1.0f, 1.0f, 01.0f);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // -------------------------------
@@ -217,8 +215,7 @@ int main()
     // 渲染指令
     // -------
     // 清空颜色缓冲并填充为深蓝绿色
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glActiveTexture(GL_TEXTURE0);
@@ -231,7 +228,12 @@ int main()
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
     lightShader.use();
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(40.0f), glm::vec3(1.0f, 0.3f, 0.5f));
+    lightShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+    lightShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+    lightShader.setVec3("lightPos", lightPosition);
+    lightShader.setVec3("viewPos", camera.Position);
+
+    model = glm::rotate(model, (float)glfwGetTime()*glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.5f));
     lightShader.setMat4("model", model);
     lightShader.setMat4("view", view);
     lightShader.setMat4("projection", projection);
@@ -241,7 +243,7 @@ int main()
     lampShader.use();
     model = glm::mat4(1.0f);
     model = glm::translate(model, lightPosition);
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
+    // model = glm::rotate(model, glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
     model = glm::scale(model, glm::vec3(0.2f));
     lightShader.setMat4("model", model);
     lampShader.setMat4("view", view);
