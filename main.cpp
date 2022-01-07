@@ -23,11 +23,11 @@ const unsigned int SCR_HEIGHT = 600;
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
-Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
-glm::vec3 lightPosition(2.0f, 2.0f, -1.0f);
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 int main()
 {
@@ -75,54 +75,6 @@ int main()
 
   Shader lightShader("../shader/shader.vs", "../shader/lightshader.fs");
   Shader lampShader("../shader/shader.vs", "../shader/lampShader.fs");
-
-  // 创建纹理
-  // -------
-  unsigned int texture1, texture2;
-  // texture1
-  glGenTextures(1, &texture1);
-  glActiveTexture(GL_TEXTURE0); // 在绑定纹理之前先激活纹理单元, 这样就可以绑定多个纹理
-  glBindTexture(GL_TEXTURE_2D, texture1);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  int width, height, nrChannels;
-  stbi_set_flip_vertically_on_load(true);
-  unsigned char *data = stbi_load("../resource/texture/container.jpeg", &width, &height, &nrChannels, 0);
-  if (data)
-  {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  }
-  else
-  {
-    std::cout << "Failed to load texture1" << std::endl;
-  }
-  stbi_image_free(data);
-  // texture2
-  glGenTextures(1, &texture2);
-  glActiveTexture(GL_TEXTURE1); // 在绑定纹理之前先激活纹理单元, 这样就可以绑定多个纹理
-  glBindTexture(GL_TEXTURE_2D, texture2);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  data = stbi_load("../resource/texture/awesomeface.png", &width, &height, &nrChannels, 0);
-  if (data)
-  {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  }
-  else
-  {
-    std::cout << "Failed to load texture2" << std::endl;
-  }
-  stbi_image_free(data);
-
-  lightShader.use();
-  lightShader.setInt("texture1", 0);
-  lightShader.setInt("texture2", 1);
 
   // 创建顶点数据
   // 立方体的36个顶点坐标和其法向量
@@ -218,22 +170,30 @@ int main()
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture2);
+    lightShader.use();
+
+    lightShader.setVec3("viewPos", camera.Position);
+
+    lightShader.setVec3("light.position", lightPos);
+    glm::vec3 lightColor;
+    lightColor.x = sin(glfwGetTime() * 2.0f);
+    lightColor.y = sin(glfwGetTime() * 0.7f);
+    lightColor.z = sin(glfwGetTime() * 1.3f);
+    glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); // decrease the influence
+    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+    lightShader.setVec3("light.ambient", ambientColor);
+    lightShader.setVec3("light.diffuse", diffuseColor);
+    lightShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+    lightShader.setVec3("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+    lightShader.setVec3("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+    lightShader.setVec3("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+    lightShader.setFloat("material.shinness", 32.0f);
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-    lightShader.use();
-    lightShader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    lightShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    lightShader.setVec3("lightPos", lightPosition);
-    lightShader.setVec3("viewPos", camera.Position);
-
-    model = glm::rotate(model, (float)glfwGetTime()*glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.5f));
+    // model = glm::rotate(model, (float)glfwGetTime()*glm::radians(20.0f), glm::vec3(0.0f, 1.0f, 0.5f));
     lightShader.setMat4("model", model);
     lightShader.setMat4("view", view);
     lightShader.setMat4("projection", projection);
@@ -242,10 +202,9 @@ int main()
 
     lampShader.use();
     model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPosition);
-    // model = glm::rotate(model, glm::radians(20.0f), glm::vec3(1.0f, 0.3f, 0.5f));
+    model = glm::translate(model, lightPos);
     model = glm::scale(model, glm::vec3(0.2f));
-    lightShader.setMat4("model", model);
+    lampShader.setMat4("model", model);
     lampShader.setMat4("view", view);
     lampShader.setMat4("projection", projection);
     glBindVertexArray(lampVAO);
