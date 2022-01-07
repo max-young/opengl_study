@@ -204,15 +204,15 @@ int main()
     lightShader.setVec3("light.position", camera.Position);
     lightShader.setVec3("light.direction", camera.Front);
     lightShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
-    lightShader.setFloat("light.outCutOff", glm::cos(glm::radians(20.5f)));
-    lightShader.setVec3("light.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-    lightShader.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
+    lightShader.setFloat("light.outCutOff", glm::cos(glm::radians(17.5f)));
+    lightShader.setVec3("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    lightShader.setVec3("light.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
     lightShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
     lightShader.setFloat("light.constant", 1.0f);
     lightShader.setFloat("light.linear", 0.09f);
     lightShader.setFloat("light.quadratic", 0.032f);
 
-    lightShader.setFloat("material.shininess", 64.0f);
+    lightShader.setFloat("material.shininess", 32.0f);
 
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
@@ -235,16 +235,6 @@ int main()
 
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-
-    lampShader.use();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(0.2f));
-    lampShader.setMat4("model", model);
-    lampShader.setMat4("view", view);
-    lampShader.setMat4("projection", projection);
-    glBindVertexArray(lampVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
