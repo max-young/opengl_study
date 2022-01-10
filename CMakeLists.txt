@@ -7,11 +7,13 @@ set(CMAKE_CXX_STANDARD 11)
 # 添加头文件
 set(GLAD_H ${PROJECT_SOURCE_DIR}/include)
 set(GLFW_H /usr/local/Cellar/glfw/3.3.4/include)
-include_directories(${GLAD_H} ${GLFW_H})
+set(ASSIMP_H /usr/local/Cellar/assimp/5.0.1/include)
+include_directories(${GLAD_H} ${GLFW_H} ${ASSIMP_H})
 
 # 添加目标链接
 set(GLFW_LINK /usr/local/Cellar/glfw/3.3.4/lib/libglfw.3.dylib)
-link_libraries(${GLFW_LINK})
+set(ASSIMP_LINK /usr/local/Cellar/assimp/5.0.1/lib/libassimp.5.dylib )
+link_libraries(${GLFW_LINK} ${ASSIMP_LINK})
 
 # 执行编译命令
 set(SOURCES main.cpp src/glad.c src/stb_image.cpp)

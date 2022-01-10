@@ -1,3 +1,10 @@
+#ifndef MESH_H
+#define MESH_H
+
+#include <string>
+#include <vector>
+#include <glm/glm.hpp>
+
 // 顶点
 struct Vertex
 {
@@ -9,35 +16,35 @@ struct Vertex
 struct Texture
 {
   unsigned int id;
-  string type; // 纹理类型, 是diffuse贴图还是specular贴图
+  std::string type; // 纹理类型, 是diffuse贴图还是specular贴图
+  std::string path;
 };
 
 class Mesh
 {
 private:
-  unsigned int VAO, VBOm EBO;
+  unsigned int VAO, VBO, EBO;
   void setupMesh();
 public:
   // 网格数据
-  vector<Vertex> vertices;
-  vector<unsigned int> indices;
-  vector<Texture> textures;
+  std::vector<Vertex> vertices;
+  std::vector<unsigned int> indices;
+  std::vector<Texture> textures;
 
-  Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures);
+  Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
   void Draw(Shader shader);
-  ~Mesh();
 };
 
-Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
   this->vertices = vertices;
   this->indices = indices;
-  this->texture = textures;
+  this->textures = textures;
 
   setupMesh();
 }
 
-void setupMesh()
+void Mesh::setupMesh()
 {
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
@@ -54,22 +61,22 @@ void setupMesh()
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal))
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
   glEnableVertexAttribArray(2);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
 
   glBindVertexArray(0);
 }
 
-void Draw(Shader shader)
+void Mesh::Draw(Shader shader)
 {
   unsigned int diffuseNr = 1;
   unsigned int specularNr = 1;
-  for (unsigned int i = 0; i < texture.size(); i++)
+  for (unsigned int i = 0; i < textures.size(); i++)
   {
     glActiveTexture(GL_TEXTURE0 + i);
-    string number;
-    string name = textures[i].type;
+    std::string number;
+    std::string name = textures[i].type;
     if(name == "texture_diffuse")
       number = std::to_string(diffuseNr++);
     else if (name == "texture_specular")
@@ -84,3 +91,5 @@ void Draw(Shader shader)
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 }
+
+#endif

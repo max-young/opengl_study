@@ -30,9 +30,6 @@ struct PointLight {
   vec3 diffuse;
   vec3 specular;
 };
-#define NR_POINT_LIGHTS 4
-uniform PointLight pointLights[NR_POINT_LIGHTS];
-vec3 CalPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 struct SpotLight {
   vec3 position;  
@@ -65,9 +62,6 @@ void main()
 
   // 定向光
   vec3 result = CalDirLight(dirLight, norm, viewDir);
-  // 点光源
-  for (int i = 0; i < NR_POINT_LIGHTS; i++)
-    result += CalPointLight(pointLights[i], norm, FragPos, viewDir);
   // 聚光灯
   result += CalSpotLight(spotLight, norm, FragPos, viewDir);
 
