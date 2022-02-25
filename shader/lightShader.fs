@@ -55,6 +55,15 @@ in vec2 TexCoords;
 uniform vec3 viewPos;
 uniform Material material;
 
+float near = 0.1;
+float far = 100.0;
+
+float LinearizeDepth(float depth)
+{
+  float z = depth * 2.0 - 1.0;
+  return (2.0 * near * far) / (far + near - z * (far - near));
+}
+
 void main()
 {
   vec3 norm = normalize(Normal);
@@ -65,7 +74,9 @@ void main()
   // 聚光灯
   result += CalSpotLight(spotLight, norm, FragPos, viewDir);
 
-  FragColor = vec4(result, 1.0f);
+  // FragColor = vec4(result, 1.0f);
+  float depth = LinearizeDepth(FragPos.z);
+  FragColor = vec4(vec3(depth), 1.0);
 }
 
 // 计算定向光源

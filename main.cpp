@@ -27,7 +27,7 @@ const unsigned int SCR_HEIGHT = 600;
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 10.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
@@ -75,6 +75,7 @@ int main()
   }
   // 启用深度测试
   glEnable(GL_DEPTH_TEST);
+  // glDepthFunc(GL_ALWAYS);
 
   // 创建着色器
   // ---------------------------------------------------------------------------
@@ -96,6 +97,7 @@ int main()
     // -------
     // 清空颜色缓冲并填充为深蓝绿色
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     lightShader.use();
