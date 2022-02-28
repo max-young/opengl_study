@@ -78,10 +78,14 @@ int main()
   // 启用深度测试
   glEnable(GL_DEPTH_TEST);
   // glDepthFunc(GL_LESS);
+  // 启用模版测试
+  glEnable(GL_STENCIL_TEST);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);  // 失败时保持不变, 通过时替换
+  glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // 不等于1时, 会绘制(默认都是0, 所以都会绘制)
 
   // 创建着色器
-  // ---------------------------------------------------------------------------
   Shader shader("../shader/lightShader.vs", "../shader/lightshader.fs");
+  Shader shaderSingleColor("../shader/lightShader.vs", "../shader/shaderSingleColor.fs");
 
   // 箱子顶点
   float cubeVertices[] = {
@@ -167,6 +171,7 @@ int main()
   // load textures
   unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/marble.jpeg").c_str());
   unsigned int floorTexture = loadTexture(FileSystem::getPath("resource/texture/metal.png").c_str());
+
   shader.use();
   shader.setInt("texture1", 0);
 
@@ -186,14 +191,31 @@ int main()
     // 清空颜色缓冲并填充为深蓝绿色
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     // 清除深度缓冲
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    shader.use();
+    shaderSingleColor.use();
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+    shaderSingleColor.setMat4("view", view);
+    shaderSingleColor.setMat4("projection", projection);
+
+    shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+
+    // 不将floor写入stencil buffer
+    glStencilMask(0x00);
+    // floor
+    glBindVertexArray(planeVAO);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    shader.setMat4("model", glm::mat4(1.0f));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    // 正常写入两个cubes
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
     //cubes
     glBindVertexArray(cubeVAO);
     glActiveTexture(GL_TEXTURE0);
@@ -205,12 +227,30 @@ int main()
     model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
     shader.setMat4("model", model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    // floor
-    glBindVertexArray(planeVAO);
-    glBindTexture(GL_TEXTURE_2D, floorTexture);
-    shader.setMat4("model", glm::mat4(1.0f));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // 绘制两个cubes的边框
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);  // 不等于1时绘制, 也就是都会绘制
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+    shaderSingleColor.use();
+    float scale = 1.1f;
+    //cubes
+    glBindVertexArray(cubeVAO);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+    model = glm::scale(model, glm::vec3(scale, scale, scale));
+    shaderSingleColor.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(scale, scale, scale));
+    shaderSingleColor.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glEnable(GL_DEPTH_TEST);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
