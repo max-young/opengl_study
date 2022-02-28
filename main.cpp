@@ -11,6 +11,7 @@
 #include <Camera.h>
 #include <Shader.h>
 #include <Model.h>
+#include <FileSystem.h>
 
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -27,7 +28,7 @@ const unsigned int SCR_HEIGHT = 600;
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 
-Camera camera(glm::vec3(0.0f, 10.0f, 20.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
@@ -73,14 +74,101 @@ int main()
     std::cout << "Failed to initialize GLAD" << std::endl;
     return -1;
   }
+
   // 启用深度测试
   glEnable(GL_DEPTH_TEST);
-  // glDepthFunc(GL_ALWAYS);
+  // glDepthFunc(GL_LESS);
 
   // 创建着色器
   // ---------------------------------------------------------------------------
-  Shader lightShader("../shader/lightShader.vs", "../shader/lightshader.fs");
-  Model myModel("../resource/model/nanosuit/nanosuit.obj");
+  Shader shader("../shader/lightShader.vs", "../shader/lightshader.fs");
+
+  // 箱子顶点
+  float cubeVertices[] = {
+    // positions          // texture Coords
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+  };
+  // 地面顶点
+  float planeVertices[] = {
+    // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+    -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+     5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+    -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+     5.0f, -0.5f, -5.0f,  2.0f, 2.0f								
+  };
+  // cube VAO
+  unsigned int cubeVAO, cubeVBO;
+  glGenVertexArrays(1, &cubeVAO);
+  glGenBuffers(1, &cubeVBO);
+  glBindVertexArray(cubeVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+  glBindVertexArray(0);
+  // plane VAO
+  unsigned int planeVAO, planeVBO;
+  glGenVertexArrays(1, &planeVAO);
+  glGenBuffers(1, &planeVBO);
+  glBindVertexArray(planeVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+  glBindVertexArray(0);
+
+  // load textures
+  unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/marble.jpeg").c_str());
+  unsigned int floorTexture = loadTexture(FileSystem::getPath("resource/texture/metal.png").c_str());
+  shader.use();
+  shader.setInt("texture1", 0);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -100,37 +188,29 @@ int main()
     // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    lightShader.use();
-
-    lightShader.setVec3("viewPos", camera.Position);
-
-    // directional light
-    lightShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    lightShader.setVec3("dirLight.ambient", glm::vec3(0.3f, 0.3f, 0.3f));
-    lightShader.setVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
-    lightShader.setVec3("dirLight.specular", glm::vec3(0.5f, 0.5f, 0.5f));
-    // spot light
-    lightShader.setVec3("spotLight.position", camera.Position);
-    lightShader.setVec3("spotLight.direction", camera.Front);
-    lightShader.setVec3("spotLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
-    lightShader.setVec3("spotLight.diffuse", glm::vec3(5.0f, 5.0f, 5.0f));
-    lightShader.setVec3("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-    lightShader.setFloat("spotLight.constant", 1.0f);
-    lightShader.setFloat("spotLight.linear", 0.09f);
-    lightShader.setFloat("spotLight.quadratic", 0.032f);
-    lightShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    lightShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
-
-    lightShader.setFloat("material.shininess", 32.0f);
-
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    lightShader.setMat4("projection", projection);
-    lightShader.setMat4("view", view);
-
+    shader.use();
     glm::mat4 model = glm::mat4(1.0f);
-    lightShader.setMat4("model", model);
-    myModel.Draw(lightShader);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", projection);
+    //cubes
+    glBindVertexArray(cubeVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    shader.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // floor
+    glBindVertexArray(planeVAO);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    shader.setMat4("model", glm::mat4(1.0f));
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
@@ -188,4 +268,40 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
   camera.ProcessMouseScroll(yoffset);
+}
+
+unsigned int loadTexture(char const *path)
+{
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+
+  int width, height, nrComponents;
+  unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+  if (data)
+  {
+    GLenum format;
+    if (nrComponents == 1)
+      format = GL_RED;
+    else if (nrComponents == 3)
+      format = GL_RGB;
+    else if (nrComponents == 4)
+      format = GL_RGBA;
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+  }
+  else
+  {
+    std::cout << "Texture failed to load at path: " << path << std::endl;
+    stbi_image_free(data);
+  }
+  return textureID; 
 }

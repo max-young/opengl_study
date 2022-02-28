@@ -4,6 +4,10 @@ project(HelloGL VERSION 0.1.0)
 # 使用 C++ 11 标准
 set(CMAKE_CXX_STANDARD 11)
 
+# 配置文件
+configure_file(configuration/root_directory.h.in configuration/root_directory.h)
+include_directories(${CMAKE_BINARY_DIR}/configuration)
+
 # 添加头文件
 set(GLAD_H ${PROJECT_SOURCE_DIR}/include)
 set(GLFW_H /usr/local/Cellar/glfw/3.3.4/include)
