@@ -1,5 +1,7 @@
-#include <iostream>
-#include <math.h>
+#include <Camera.h>
+#include <Shader.h>
+#include <Model.h>
+#include <FileSystem.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,11 +10,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <Camera.h>
-#include <Shader.h>
-#include <Model.h>
-#include <FileSystem.h>
 #include <vector>
+#include <map>
+#include <iostream>
+#include <math.h>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -79,6 +80,10 @@ int main()
   glEnable(GL_DEPTH_TEST);
   // glDepthFunc(GL_LESS);
 
+  // 启用缓和
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 混合方法, alpha(透明度)作为源因子, 1-alpha作为目标因子
+
   // 创建着色器
   Shader shader("../shader/lightShader.vs", "../shader/lightshader.fs");
 
@@ -138,7 +143,6 @@ int main()
     -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
      5.0f, -0.5f, -5.0f,  2.0f, 2.0f								
   };
-  // 草的顶点
   float vegetationVertices[] = {
     // positions          // texture Coords
      0.0f,  0.5f,  0.0f,  0.0f, 0.0f,
@@ -196,7 +200,16 @@ int main()
   // load textures
   unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/marble.jpeg").c_str());
   unsigned int floorTexture = loadTexture(FileSystem::getPath("resource/texture/metal.png").c_str());
-  unsigned int vegetationTexture = loadTexture(FileSystem::getPath("resource/texture/grass.png").c_str());
+  unsigned int vegetationTexture = loadTexture(FileSystem::getPath("resource/texture/blending_transparent_window.png").c_str());
+
+  std::vector<glm::vec3> windows
+  {
+    glm::vec3(-1.5f, 0.0f, -0.48f),
+    glm::vec3( 1.5f, 0.0f, 0.51f),
+    glm::vec3( 0.0f, 0.0f, 0.7f),
+    glm::vec3(-0.3f, 0.0f, -2.3f),
+    glm::vec3( 0.5f, 0.0f, -0.6f)
+  };
 
   shader.use();
   shader.setInt("texture1", 0);
@@ -247,10 +260,16 @@ int main()
     // 草
     glBindVertexArray(vegetationVAO);
     glBindTexture(GL_TEXTURE_2D, vegetationTexture);
-    for (unsigned int i = 0; i < vegetation.size(); i++)
+    std::map<float, glm::vec3> sorted;
+    for (unsigned int i = 0; i < windows.size(); i++)
+    {
+      float distance = glm::length(camera.Position - windows[i]);
+      sorted[distance] = windows[i];
+    }
+    for (std::map<float, glm::vec3>::reverse_iterator it=sorted.rbegin(); it != sorted.rend(); ++it)
     {
       model = glm::mat4(1.0f);
-      model = glm::translate(model, vegetation[i]);
+      model = glm::translate(model, it->second);
       shader.setMat4("model", model);
       glDrawArrays(GL_TRIANGLES, 0, 6);
     }
