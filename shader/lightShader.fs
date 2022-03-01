@@ -5,18 +5,12 @@ in vec2 TexCoords;
 
 uniform sampler2D texture1;
 
-float near = 0.1;
-float far = 100.0;
-
-float LinearizeDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0;
-    return (2.0 * near * far) / (far + near - z * (far - near));
-}
-
 void main()
 {
-  FragColor = texture(texture1, TexCoords);
-  // float depth = LinearizeDepth(gl_FragCoord.z) / far;
-  // FragColor = vec4(vec3(depth), 1.0f);
+  vec4 texColor = texture(texture1, TexCoords);
+  // 如果四通道颜色的alpha值(透明度)小于0.1, 则不着色
+  if(texColor.a < 0.1) {
+    discard;
+  }
+  FragColor = texColor;
 }
