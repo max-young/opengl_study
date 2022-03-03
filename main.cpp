@@ -16,22 +16,22 @@
 #include <math.h>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void processInput(GLFWwindow *window);
 // 鼠标回调函数, xpos和ypos是鼠标当前位置
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void processInput(GLFWwindow *window);
 unsigned int loadTexture(char const * path);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-float deltaTime = 0.0f; // 当前帧与上一帧的时间差
-float lastFrame = 0.0f; // 上一帧的时间
-
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+
+float deltaTime = 0.0f; // 当前帧与上一帧的时间差
+float lastFrame = 0.0f; // 上一帧的时间
 
 
 int main()
@@ -78,17 +78,10 @@ int main()
 
   // 启用深度测试
   glEnable(GL_DEPTH_TEST);
-  // glDepthFunc(GL_LESS);
-
-  // 启用混合
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 混合方法, alpha(透明度)作为源因子, 1-alpha作为目标因子
-
-  // 启用面剔除(背面的三角形不渲染)
-  glEnable(GL_CULL_FACE);
 
   // 创建着色器
-  Shader shader("../shader/lightShader.vs", "../shader/lightshader.fs");
+  Shader shader("../shader/framebuffers.vs", "../shader/framebuffers.fs");
+  Shader screenShader("../shader/framebuffers_screen.vs", "../shader/framebuffers_screen.fs");
 
   // 箱子顶点
   float cubeVertices[] = {
@@ -146,15 +139,15 @@ int main()
      5.0f, -0.5f, -5.0f,  2.0f, 2.0f,
     -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
   };
-  float vegetationVertices[] = {
-    // positions          // texture Coords
-     0.0f,  0.5f,  0.0f,  0.0f, 0.0f,
-     0.0f, -0.5f,  0.0f,  0.0f, 1.0f,
-     1.0f, -0.5f,  0.0f,  1.0f, 1.0f,
+  float quadVertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
 
-     0.0f,  0.5f,  0.0f,  0.0f, 0.0f,
-     1.0f, -0.5f,  0.0f,  1.0f, 1.0f,
-     1.0f,  0.5f,  0.0f,  1.0f, 0.0f
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
   };
   // cube VAO
   unsigned int cubeVAO, cubeVBO;
@@ -167,7 +160,6 @@ int main()
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-  glBindVertexArray(0);
   // plane VAO
   unsigned int planeVAO, planeVBO;
   glGenVertexArrays(1, &planeVAO);
@@ -179,43 +171,50 @@ int main()
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-  glBindVertexArray(0);
-  // vegetation VAO
-  unsigned int vegetationVAO, vegetationVBO;
-  glGenVertexArrays(1, &vegetationVAO);
-  glGenBuffers(1, &vegetationVBO);
-  glBindVertexArray(vegetationVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, vegetationVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vegetationVertices), &vegetationVertices, GL_STATIC_DRAW);
+  // screen quad VAO
+  unsigned int quadVAO, quadVBO;
+  glGenVertexArrays(1, &quadVAO);
+  glGenBuffers(1, &quadVBO);
+  glBindVertexArray(quadVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-  glBindVertexArray(0);
-  // 草的位置
-  std::vector<glm::vec3> vegetation;
-  vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
-  vegetation.push_back(glm::vec3( 1.5f, 0.0f, 0.51f));
-  vegetation.push_back(glm::vec3( 0.0f, 0.0f, 0.7f));
-  vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
-  vegetation.push_back(glm::vec3( 0.5f, 0.0f, -0.6f));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
   // load textures
-  unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/marble.jpeg").c_str());
+  unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/container.jpeg").c_str());
   unsigned int floorTexture = loadTexture(FileSystem::getPath("resource/texture/metal.png").c_str());
-  unsigned int vegetationTexture = loadTexture(FileSystem::getPath("resource/texture/blending_transparent_window.png").c_str());
-
-  std::vector<glm::vec3> windows
-  {
-    glm::vec3(-1.5f, 0.0f, -0.48f),
-    glm::vec3( 1.5f, 0.0f, 0.51f),
-    glm::vec3( 0.0f, 0.0f, 0.7f),
-    glm::vec3(-0.3f, 0.0f, -2.3f),
-    glm::vec3( 0.5f, 0.0f, -0.6f)
-  };
 
   shader.use();
   shader.setInt("texture1", 0);
+
+  screenShader.use();
+  screenShader.setInt("screenTexture", 0);
+
+  // framebuffer configuration
+  // -------------------------
+  unsigned int framebuffer;
+  glGenFramebuffers(1, &framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+  // create a color attachment texture
+  unsigned int textureColorbuffer;
+  glGenTextures(1, &textureColorbuffer);
+  glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+  // create a renderbuffer
+  unsigned int rbo;
+  glGenRenderbuffers(1, &rbo);
+  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+  // check framebuffer complete
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) std::cout << "ERROR::FRAMEBUFFER::Framebuffer is not complete!" << std::endl;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -227,6 +226,10 @@ int main()
 
     // 接受键盘输入
     processInput(window);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glEnable(GL_DEPTH_TEST);
 
     // 渲染指令
     // -------
@@ -243,7 +246,6 @@ int main()
     shader.setMat4("projection", projection);
 
     // floor
-    glDisable(GL_CULL_FACE);
     glBindVertexArray(planeVAO);
     glBindTexture(GL_TEXTURE_2D, floorTexture);
     shader.setMat4("model", glm::mat4(1.0f));
@@ -251,7 +253,6 @@ int main()
     glBindVertexArray(0);
 
     // 正常写入两个cubes
-    glEnable(GL_CULL_FACE);
     glBindVertexArray(cubeVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cubeTexture);
@@ -262,23 +263,16 @@ int main()
     model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
     shader.setMat4("model", model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    // 草
-    glDisable(GL_CULL_FACE);
-    glBindVertexArray(vegetationVAO);
-    glBindTexture(GL_TEXTURE_2D, vegetationTexture);
-    std::map<float, glm::vec3> sorted;
-    for (unsigned int i = 0; i < windows.size(); i++)
-    {
-      float distance = glm::length(camera.Position - windows[i]);
-      sorted[distance] = windows[i];
-    }
-    for (std::map<float, glm::vec3>::reverse_iterator it=sorted.rbegin(); it != sorted.rend(); ++it)
-    {
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, it->second);
-      shader.setMat4("model", model);
-      glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_DEPTH_TEST);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    screenShader.use();
+    glBindVertexArray(quadVAO);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
