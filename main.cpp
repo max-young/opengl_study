@@ -27,7 +27,7 @@ unsigned int loadCubemap(std::vector<std::string> faces);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 10.0f, 10.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
@@ -81,88 +81,30 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // 创建着色器
-  Shader shaderRed("../shader/advanced_glsl.vs", "../shader/red.fs");
-  Shader shaderGreen("../shader/advanced_glsl.vs", "../shader/green.fs");
-  Shader shaderBlue("../shader/advanced_glsl.vs", "../shader/blue.fs");
-  Shader shaderYellow("../shader/advanced_glsl.vs", "../shader/yellow.fs");
+  Shader shader("../shader/geometry_shader.vs", "../shader/geometry_shader.fs", "../shader/geometry_shader.gs");
+  Shader normalShader("../shader/normal_display_shader.vs", "../shader/normal_display_shader.fs", "../shader/normal_display_shader.gs");
 
-  float cubeVertices[] = {
-    // positions         
-    -0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f,  
-     0.5f,  0.5f, -0.5f,  
-     0.5f,  0.5f, -0.5f,  
-    -0.5f,  0.5f, -0.5f, 
-    -0.5f, -0.5f, -0.5f, 
+  Model nanosuit(FileSystem::getPath("resource/model/nanosuit_reflection/nanosuit.obj"));
 
-    -0.5f, -0.5f,  0.5f, 
-     0.5f, -0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f,  0.5f, 
-    -0.5f, -0.5f,  0.5f, 
-
-    -0.5f,  0.5f,  0.5f, 
-    -0.5f,  0.5f, -0.5f, 
-    -0.5f, -0.5f, -0.5f, 
-    -0.5f, -0.5f, -0.5f, 
-    -0.5f, -0.5f,  0.5f, 
-    -0.5f,  0.5f,  0.5f, 
-
-     0.5f,  0.5f,  0.5f,  
-     0.5f,  0.5f, -0.5f,  
-     0.5f, -0.5f, -0.5f,  
-     0.5f, -0.5f, -0.5f,  
-     0.5f, -0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-
-    -0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f,  
-     0.5f, -0.5f,  0.5f,  
-     0.5f, -0.5f,  0.5f,  
-    -0.5f, -0.5f,  0.5f, 
-    -0.5f, -0.5f, -0.5f, 
-
-    -0.5f,  0.5f, -0.5f, 
-     0.5f,  0.5f, -0.5f,  
-     0.5f,  0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f,  0.5f, 
-    -0.5f,  0.5f, -0.5f, 
+  float points[] = {
+    -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+     0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+    -0.5f, -0.5f, 1.0f, 1.0f, 0.0f
   };
 
-  // cube VAO
-  unsigned int cubeVAO, cubeVBO;
-  glGenVertexArrays(1, &cubeVAO);
-  glGenBuffers(1, &cubeVBO);
-  glBindVertexArray(cubeVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+  // VAO
+  unsigned int VAO, VBO;
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-  // uniform buffer object
-  unsigned int uniformBlockIndexRed = glGetUniformBlockIndex(shaderRed.ID, "Matrices");
-  unsigned int uniformBlockIndexGreen = glGetUniformBlockIndex(shaderGreen.ID, "Matrices");
-  unsigned int uniformBlockIndexBlue = glGetUniformBlockIndex(shaderBlue.ID, "Matrices");
-  unsigned int uniformBlockIndexYellow = glGetUniformBlockIndex(shaderYellow.ID, "Matrices");
-
-  glUniformBlockBinding(shaderRed.ID, uniformBlockIndexRed, 0);
-  glUniformBlockBinding(shaderGreen.ID, uniformBlockIndexGreen, 0);
-  glUniformBlockBinding(shaderBlue.ID, uniformBlockIndexBlue, 0);
-  glUniformBlockBinding(shaderYellow.ID, uniformBlockIndexYellow, 0);
-
-  unsigned int uboMatrices;
-  glGenBuffers(1, &uboMatrices);
-  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-  glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
-
-  glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
-  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+  glBindVertexArray(0);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -182,35 +124,24 @@ int main()
     // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 view = camera.GetViewMatrix();
-    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindVertexArray(cubeVAO);
-    shaderRed.use();
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f));
-    shaderRed.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
 
-    shaderGreen.use();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f));
-    shaderGreen.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(VAO);
+    shader.use();
+    shader.setMat4("model", model);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", projection);
+    // glDrawArrays(GL_POINTS, 0, 4);
+    shader.setFloat("time", static_cast<float>(glfwGetTime()));
+    nanosuit.Draw(shader);
 
-    shaderYellow.use();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f));
-    shaderYellow.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    shaderBlue.use();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f));
-    shaderBlue.setMat4("model", model);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    normalShader.use();
+    normalShader.setMat4("model", model);
+    normalShader.setMat4("view", view);
+    normalShader.setMat4("projection", projection);
+    nanosuit.Draw(normalShader);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
