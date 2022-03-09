@@ -81,97 +81,56 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // 创建着色器
-  Shader shader("../shader/framebuffers.vs", "../shader/framebuffers.fs");
-  Shader skyboxShader("../shader/skybox.vs", "../shader/skybox.fs");
+  Shader shaderRed("../shader/advanced_glsl.vs", "../shader/red.fs");
+  Shader shaderGreen("../shader/advanced_glsl.vs", "../shader/green.fs");
+  Shader shaderBlue("../shader/advanced_glsl.vs", "../shader/blue.fs");
+  Shader shaderYellow("../shader/advanced_glsl.vs", "../shader/yellow.fs");
 
-  // 箱子顶点
   float cubeVertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
-    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+    // positions         
+    -0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f, -0.5f,  
+     0.5f,  0.5f, -0.5f,  
+     0.5f,  0.5f, -0.5f,  
+    -0.5f,  0.5f, -0.5f, 
+    -0.5f, -0.5f, -0.5f, 
 
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f, 
+     0.5f, -0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f, -0.5f,  0.5f, 
 
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f, -0.5f, 
+    -0.5f, -0.5f, -0.5f, 
+    -0.5f, -0.5f, -0.5f, 
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f, 
 
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f, -0.5f,  
+     0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
 
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f,  0.5f,  
+     0.5f, -0.5f,  0.5f,  
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f, -0.5f, -0.5f, 
 
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    -0.5f,  0.5f, -0.5f, 
+     0.5f,  0.5f, -0.5f,  
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f, -0.5f, 
   };
-  float skyboxVertices[] = {
-    // positions          
-    -1.0f,  1.0f, -1.0f,
-    -1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
 
-    -1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-
-    -1.0f, -1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-    -1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f, -1.0f,
-
-    -1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f
-  };
   // cube VAO
   unsigned int cubeVAO, cubeVBO;
   glGenVertexArrays(1, &cubeVAO);
@@ -180,38 +139,30 @@ int main()
   glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-  // skybox VAO
-  unsigned int skyboxVAO, skyboxVBO;
-  glGenVertexArrays(1, &skyboxVAO);
-  glGenBuffers(1, &skyboxVBO);
-  glBindVertexArray(skyboxVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-  // load textures
-  unsigned int cubeTexture = loadTexture(FileSystem::getPath("resource/texture/container.jpeg").c_str());
-  std::vector<std::string> faces
-  {
-    FileSystem::getPath("resource/texture/right.jpg"),
-    FileSystem::getPath("resource/texture/left.jpg"),
-    FileSystem::getPath("resource/texture/top.jpg"),
-    FileSystem::getPath("resource/texture/bottom.jpg"),
-    FileSystem::getPath("resource/texture/front.jpg"),
-    FileSystem::getPath("resource/texture/back.jpg")
-  };
-  unsigned int skyboxTexture = loadCubemap(faces);
+  // uniform buffer object
+  unsigned int uniformBlockIndexRed = glGetUniformBlockIndex(shaderRed.ID, "Matrices");
+  unsigned int uniformBlockIndexGreen = glGetUniformBlockIndex(shaderGreen.ID, "Matrices");
+  unsigned int uniformBlockIndexBlue = glGetUniformBlockIndex(shaderBlue.ID, "Matrices");
+  unsigned int uniformBlockIndexYellow = glGetUniformBlockIndex(shaderYellow.ID, "Matrices");
 
-  shader.use();
-  shader.setVec3("cameraPos", camera.Position);
-  Model ourModel(FileSystem::getPath("resource/model/nanosuit_reflection/nanosuit.obj"));
+  glUniformBlockBinding(shaderRed.ID, uniformBlockIndexRed, 0);
+  glUniformBlockBinding(shaderGreen.ID, uniformBlockIndexGreen, 0);
+  glUniformBlockBinding(shaderBlue.ID, uniformBlockIndexBlue, 0);
+  glUniformBlockBinding(shaderYellow.ID, uniformBlockIndexYellow, 0);
 
-  skyboxShader.use();
-  skyboxShader.setInt("skybox", 0);
+  unsigned int uboMatrices;
+  glGenBuffers(1, &uboMatrices);
+  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 2 * sizeof(glm::mat4));
+
+  glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+  glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -224,8 +175,6 @@ int main()
     // 接受键盘输入
     processInput(window);
 
-    // glEnable(GL_DEPTH_TEST);
-
     // 渲染指令
     // -------
     // 清空颜色缓冲并填充为深蓝绿色
@@ -233,38 +182,35 @@ int main()
     // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // 正常写入cube
-    shader.use();
-    model = glm::translate(model, glm::vec3(0.0, -10.0, -30.0));
-    shader.setMat4("model", model);
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
-    glActiveTexture(GL_TEXTURE3);
-    shader.setInt("skybox", 3);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-    ourModel.Draw(shader);
-    // glBindVertexArray(cubeVAO);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, cubeTexture);
-    // glDrawArrays(GL_TRIANGLES, 0, 36);
-    // glBindVertexArray(0);
-
-    glDepthFunc(GL_LEQUAL);
-    skyboxShader.use();
-    // 将4*4矩阵变成3*3矩阵, 去掉位移部分, 然后再变成4*4, 只保留旋转
-    view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-    skyboxShader.setMat4("view", view);
-    skyboxShader.setMat4("projection", projection);
-    glBindVertexArray(skyboxVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+    glBindVertexArray(cubeVAO);
+    shaderRed.use();
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f));
+    shaderRed.setMat4("model", model);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
+
+    shaderGreen.use();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f));
+    shaderGreen.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    shaderYellow.use();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f));
+    shaderYellow.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    shaderBlue.use();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f));
+    shaderBlue.setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
