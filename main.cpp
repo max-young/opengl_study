@@ -27,7 +27,7 @@ unsigned int loadCubemap(std::vector<std::string> faces);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-Camera camera(glm::vec3(0.0f, 10.0f, 10.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 55.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
@@ -81,30 +81,117 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // 创建着色器
-  Shader shader("../shader/geometry_shader.vs", "../shader/geometry_shader.fs", "../shader/geometry_shader.gs");
-  Shader normalShader("../shader/normal_display_shader.vs", "../shader/normal_display_shader.fs", "../shader/normal_display_shader.gs");
+  Shader shader("../shader/instantiate.vs", "../shader/instantiate.fs");
+  Shader rockShader("../shader/rock.vs", "../shader/rock.fs");
 
-  Model nanosuit(FileSystem::getPath("resource/model/nanosuit_reflection/nanosuit.obj"));
+  // Model nanosuit(FileSystem::getPath("resource/model/nanosuit_reflection/nanosuit.obj"));
+  Model planet(FileSystem::getPath("resource/model/planet/planet.obj"));
+  Model rock(FileSystem::getPath("resource/model/rock/rock.obj"));
 
-  float points[] = {
-    -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-     0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, 1.0f, 1.0f, 0.0f
-  };
+  // float quadVertices[] = {
+  //   // 位置           // 颜色
+  //   -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+  //    0.05f, -0.05f,  0.0f, 1.0f, 0.0f,
+  //   -0.05f, -0.05f,  0.0f, 0.0f, 1.0f,
 
-  // VAO
-  unsigned int VAO, VBO;
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-  glBindVertexArray(0);
+  //   -0.05f,  0.05f,  1.0f, 0.0f, 0.0f,
+  //    0.05f, -0.05f,  0.0f, 1.0f, 0.0f,   
+  //    0.05f,  0.05f,  0.0f, 1.0f, 1.0f   
+  // };
+  // glm::vec2 translations[100];
+  // int index = 0;
+  // float offset = 0.1f;
+  // for (int y = -10; y < 10; y += 2)
+  // {
+  //   for (int x = -10; x < 10; x += 2)
+  //   {
+  //     glm::vec2 translation;
+  //     translation.x = (float)x / 10.0f + offset;
+  //     translation.y = (float)y / 10.0f + offset;
+  //     translations[index++] = translation;
+  //   }
+  // }
+
+  // unsigned int instanceVBO;
+  // glGenBuffers(1, &instanceVBO);
+  // glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // // VAO
+  // unsigned int VAO, VBO;
+  // glGenVertexArrays(1, &VAO);
+  // glGenBuffers(1, &VBO);
+  // glBindVertexArray(VAO);
+  // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  // glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+  // glEnableVertexAttribArray(0);
+  // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+  // glEnableVertexAttribArray(1);
+  // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+  // glEnableVertexAttribArray(2);
+  // glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+  // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // glVertexAttribDivisor(2, 1);
+  // glBindVertexArray(0);
+
+  unsigned int amount = 10000;
+  glm::mat4 *modelMatrices;
+  modelMatrices = new glm::mat4[amount];
+  srand(static_cast<unsigned int>(glfwGetTime()));
+  float radius = 50.0;
+  float offset = 2.5f;
+  for (unsigned int i = 0; i < amount; i++)
+  {
+    glm::mat4 model = glm::mat4(1.0f);
+    // 1. 位移: 分布在半径为'radius'的圆形上, 偏移的范围是[-offset, offset]
+    float angle = (float)i / (float)amount * 360.0f;
+    float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+    float x = sin(angle) * radius + displacement;
+    displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+    float y = displacement * 0.4f;
+    displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+    float z = cos(angle) * radius + displacement;
+    model = glm::translate(model, glm::vec3(x, y, z));
+
+    // 2. 缩放: 在0.05到0.25之间随机缩放
+    float scale = (rand() % 20) / 100.0f + 0.05;
+    model = glm::scale(model, glm::vec3(scale));
+
+    // 3. 旋转: 绕着一个(半)随机选择的旋转轴向量进行随机的旋转
+    float rotAngle = (rand() % 360);
+    model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+    // 4. 添加到矩阵的数组中
+    modelMatrices[i] = model;
+  }
+
+  unsigned int buffer;
+  glGenBuffers(1, &buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * amount, &modelMatrices[0], GL_STATIC_DRAW);
+  for (unsigned int i = 0; i < rock.meshes.size(); i++)
+  {
+    unsigned int VAO = rock.meshes[i].VAO;
+    glBindVertexArray(VAO);
+    GLsizei vec4Size = sizeof(glm::vec4);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)0);
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(sizeof(glm::vec4)));
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(2 * sizeof(glm::vec4)));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(3 * sizeof(glm::vec4)));
+
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+
+    glBindVertexArray(0);
+  }
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -124,24 +211,32 @@ int main()
     // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
-
-    glBindVertexArray(VAO);
     shader.use();
-    shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
-    // glDrawArrays(GL_POINTS, 0, 4);
-    shader.setFloat("time", static_cast<float>(glfwGetTime()));
-    nanosuit.Draw(shader);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -3.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+    shader.setMat4("model", model);
+    planet.Draw(shader);
 
-    normalShader.use();
-    normalShader.setMat4("model", model);
-    normalShader.setMat4("view", view);
-    normalShader.setMat4("projection", projection);
-    nanosuit.Draw(normalShader);
+    rockShader.use();
+    rockShader.setMat4("view", view);
+    rockShader.setMat4("projection", projection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rock.textures_loaded[0].id);
+    for (unsigned int i = 0; i < rock.meshes.size(); i++)
+    {
+      glBindVertexArray(rock.meshes[i].VAO);
+      glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount);
+      glBindVertexArray(0);
+    }
+    
+    // glBindVertexArray(VAO);
+    // glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+    // glBindVertexArray(0);
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);

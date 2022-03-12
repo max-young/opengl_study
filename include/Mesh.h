@@ -23,10 +23,10 @@ struct Texture
 class Mesh
 {
 private:
-  unsigned int VAO, VBO, EBO;
   void setupMesh();
 public:
   // 网格数据
+  unsigned int VAO, VBO, EBO;
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;

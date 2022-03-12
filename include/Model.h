@@ -19,7 +19,6 @@ unsigned int TextureFromFile(char const * path, const std::string &directory, bo
 class Model
 {
 private:
-  std::vector<Mesh> meshes;
   std::string directory;
   
   void loadModel(std::string path);
@@ -28,6 +27,7 @@ private:
   std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName);
 public:
   std::vector<Texture> textures_loaded;
+  std::vector<Mesh> meshes;
   Model(std::string const &path)
   {
     loadModel(path);
