@@ -26,6 +26,8 @@ unsigned int loadCubemap(std::vector<std::string> faces);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+bool blinn = false;
+bool blinnKeyPressed = false;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
@@ -33,7 +35,6 @@ bool firstMouse = true;
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
-
 
 int main()
 {
@@ -47,8 +48,9 @@ int main()
   // 我们同样明确告诉GLFW我们使用的是核心模式(Core-profile)。明确告诉GLFW我们需要使用核心模式意味着我们只能使用OpenGL功能的一个子集（没有我们已不再需要的向后兼容特性
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   // 如果使用的是Mac OS X系统，你还需要加下面这行代码到你的初始化代码中这些配置才能起作用
+#ifdef __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  // glfwWindowHint(GLFW_SAMPLES, 4);
+#endif
 
   // 创建窗口
   // ---------------------------------------------------------------------------
@@ -80,124 +82,46 @@ int main()
 
   // 启用深度测试
   glEnable(GL_DEPTH_TEST);
-  // glEnable(GL_MULTISAMPLE);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // 创建着色器
-  Shader shader("../shader/aa.vs", "../shader/aa.fs");
-  // Shader screenShader("../shader/aa_post.vs", "../shader/aa_post.fs");
+  Shader shader("../shader/advanced_lighting.vs", "../shader/advanced_lighting.fs");
 
-  float cubeVertices[] = {
-    // Positions       
-    -0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f, 
-     0.5f,  0.5f, -0.5f, 
-     0.5f,  0.5f, -0.5f,  
-    -0.5f,  0.5f, -0.5f,  
-    -0.5f, -0.5f, -0.5f, 
+  float planeVertices[] = 
+  {
+     // positions           // normals         // texcoords
+     10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+    -10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+    -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
 
-    -0.5f, -0.5f,  0.5f, 
-     0.5f, -0.5f,  0.5f, 
-     0.5f,  0.5f,  0.5f, 
-     0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f,  0.5f, 
-    -0.5f, -0.5f,  0.5f, 
-
-    -0.5f,  0.5f,  0.5f, 
-    -0.5f,  0.5f, -0.5f,  
-    -0.5f, -0.5f, -0.5f,  
-    -0.5f, -0.5f, -0.5f, 
-    -0.5f, -0.5f,  0.5f, 
-    -0.5f,  0.5f,  0.5f, 
-
-     0.5f,  0.5f,  0.5f,  
-     0.5f,  0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-
-    -0.5f, -0.5f, -0.5f, 
-     0.5f, -0.5f, -0.5f,  
-     0.5f, -0.5f,  0.5f, 
-     0.5f, -0.5f,  0.5f, 
-    -0.5f, -0.5f,  0.5f,  
-    -0.5f, -0.5f, -0.5f,  
-
-    -0.5f,  0.5f, -0.5f,  
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f,  0.5f,  
-     0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f,  0.5f,  
-    -0.5f,  0.5f, -0.5f
+     10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+    -10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+     10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f  
   };
-  float quadVertices[] = {   // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
-    // positions   // texCoords
-    -1.0f,  1.0f,  0.0f, 1.0f,
-    -1.0f, -1.0f,  0.0f, 0.0f,
-     1.0f, -1.0f,  1.0f, 0.0f,
 
-    -1.0f,  1.0f,  0.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 0.0f,
-     1.0f,  1.0f,  1.0f, 1.0f
-  };
   // VAO
   unsigned int VAO, VBO;
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+  glBindVertexArray(0);
   glBindVertexArray(0);
 
-  unsigned int quadVAO, quadVBO;
-  glGenVertexArrays(1, &quadVAO);
-  glGenBuffers(1, &quadVBO);
-  glBindVertexArray(quadVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-  unsigned int frameBuffer;
-  glGenFramebuffers(1, &frameBuffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-  unsigned int textureColorBufferMultiSampled;
-  glGenTextures(1, &textureColorBufferMultiSampled);
-  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
-  glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, SCR_WIDTH, SCR_HEIGHT, GL_TRUE);
-  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
-  unsigned int rbo;
-  glGenRenderbuffers(1, &rbo);
-  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-  glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
-  glBindRenderbuffer(GL_RENDERBUFFER, 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  // unsigned int intermediateFBO;
-  // glGenFramebuffers(1, &intermediateFBO);
-  // glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
-  // unsigned int screenTexture;
-  // glGenTextures(1, &screenTexture);
-  // glBindTexture(GL_TEXTURE_2D, screenTexture);
-  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
-  // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-  //   std::cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << std::endl;
-  // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  unsigned int floorTexture = loadTexture(FileSystem::getPath("resource/texture/wood.png").c_str());
 
   shader.use();
-  // screenShader.setInt("screenTexture", 0);
+  shader.setInt("texture1", 0);
+
+  glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 
   // 保持窗口打开, 接受用户输入, 不断绘制
   // ---------------------------------------------------------------------------
@@ -217,38 +141,21 @@ int main()
     // 清除深度缓冲
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     shader.use();
-    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 projection = glm::perspective(45.0f, (float)SCR_WIDTH/(float)SCR_HEIGHT, 0.1f, 100.0f);
-    shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+    shader.setVec3("viewPos", camera.Position);
+    shader.setVec3("lightPos", lightPos);
+    shader.setInt("blinn", blinn);
 
     glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, frameBuffer);
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // glDisable(GL_DEPTH_TEST);
-    // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // screenShader.use();
-    // glBindVertexArray(quadVAO);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, screenTexture);
-    // glDrawArrays(GL_TRIANGLES, 0, 6);
+    // std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
 
     // 将缓冲区的像素颜色值绘制到窗口
     glfwSwapBuffers(window);
@@ -284,6 +191,16 @@ void processInput(GLFWwindow *window)
     camera.ProcessKeyboard(LEFT, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     camera.ProcessKeyboard(RIGHT, deltaTime);
+
+  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !blinnKeyPressed)
+  {
+    blinn = !blinn;
+    blinnKeyPressed = true;
+  }
+  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+  {
+    blinnKeyPressed = false;
+  }
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
