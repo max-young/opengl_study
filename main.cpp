@@ -31,6 +31,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 bool shadows = true;
 bool shadowsKeyPressed = false;
+float heightScale = 0.1f;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f, lastY = SCR_HEIGHT / 2.0f;
@@ -89,14 +90,16 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // 创建着色器
-  Shader shader("../shader/normal_mapping.vs", "../shader/normal_mapping.fs");
+  Shader shader("../shader/parallax_mapping.vs", "../shader/parallax_mapping.fs");
 
-  unsigned int diffuseMap = loadTexture(FileSystem::getPath("resource/texture/brickwall.jpeg").c_str());
-  unsigned int normalMap = loadTexture(FileSystem::getPath("resource/texture/brickwall_normal.jpeg").c_str());
+  unsigned int diffuseMap = loadTexture(FileSystem::getPath("resource/texture/bricks2.jpeg").c_str());
+  unsigned int normalMap = loadTexture(FileSystem::getPath("resource/texture/bricks2_normal.jpeg").c_str());
+  unsigned int heightMap = loadTexture(FileSystem::getPath("resource/texture/bricks2_disp.jpeg").c_str());
 
   shader.use();
   shader.setInt("diffuseMap", 0);
   shader.setInt("normalMap", 1);
+  shader.setInt("depthMap", 2);
 
   glm::vec3 lightPos(0.5f, 1.0f, 0.3f);
 
@@ -129,10 +132,13 @@ int main()
     shader.setMat4("model", model);
     shader.setVec3("viewPos", camera.Position);
     shader.setVec3("lightPos", lightPos);
+    shader.setFloat("heightScale", heightScale);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffuseMap);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, normalMap);
+    glBindTexture(GL_TEXTURE_2D, normalMap);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, heightMap);
     renderQuad();
 
     model = glm::mat4(1.0f);
