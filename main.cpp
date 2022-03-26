@@ -90,7 +90,7 @@ int main()
   glEnable(GL_DEPTH_TEST);
 
   // 创建着色器
-  Shader shader("../shader/parallax_mapping.vs", "../shader/parallax_mapping.fs");
+  Shader shader("../shader/steep_parallax_mapping.vs", "../shader/steep_parallax_mapping.fs");
 
   unsigned int diffuseMap = loadTexture(FileSystem::getPath("resource/texture/bricks2.jpeg").c_str());
   unsigned int normalMap = loadTexture(FileSystem::getPath("resource/texture/bricks2_normal.jpeg").c_str());
