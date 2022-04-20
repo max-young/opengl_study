@@ -87,21 +87,25 @@ int main()
   Shader shader("../shader/pbr.vs", "../shader/pbr.fs");
 
   shader.use();
-  shader.setVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
-  shader.setFloat("ao", 1.0f);
+  shader.setInt("albedoMap", 0);
+  shader.setInt("normalMap", 1);
+  shader.setInt("metallicMap", 2);
+  shader.setInt("roughnessMap", 3);
+  shader.setInt("aoMap", 4);
+
+
+  unsigned int albedo    = loadTexture(FileSystem::getPath("resource/texture/pbr/rusted_iron/albedo.png").c_str());
+  unsigned int normal    = loadTexture(FileSystem::getPath("resource/texture/pbr/rusted_iron/normal.png").c_str());
+  unsigned int metallic  = loadTexture(FileSystem::getPath("resource/texture/pbr/rusted_iron/metallic.png").c_str());
+  unsigned int roughness = loadTexture(FileSystem::getPath("resource/texture/pbr/rusted_iron/roughness.png").c_str());
+  unsigned int ao        = loadTexture(FileSystem::getPath("resource/texture/pbr/rusted_iron/ao.png").c_str());
 
   // lights
   glm::vec3 lightPositions[] = {
-    glm::vec3(-10.0f,  10.0f, 10.0f),
-    glm::vec3( 10.0f,  10.0f, 10.0f),
-    glm::vec3(-10.0f, -10.0f, 10.0f),
-    glm::vec3( 10.0f, -10.0f, 10.0f),
+    glm::vec3(0.0f, 0.0f, 10.0f),
   };
   glm::vec3 lightColors[] = {
-    glm::vec3(300.0f, 300.0f, 300.0f),
-    glm::vec3(300.0f, 300.0f, 300.0f),
-    glm::vec3(300.0f, 300.0f, 300.0f),
-    glm::vec3(300.0f, 300.0f, 300.0f),
+    glm::vec3(150.0f, 150.0f, 150.0f),
   };
   int nrRows = 7;
   int nrColumns = 7;
@@ -134,14 +138,23 @@ int main()
     shader.setMat4("view", view);
     shader.setVec3("camPos", camera.Position);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, albedo);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, normal);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, metallic);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, roughness);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, ao);
+
     glm::mat4 model = glm::mat4(1.0f);
     // render nrRows * nrColumns spheres
     for (int row = 0; row < nrRows; ++row)
     {
-      shader.setFloat("metallic", (float)row / (float)nrRows);
       for (int col = 0; col < nrColumns; ++col)
       {
-        shader.setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(
           (col - (nrColumns / 2)) * spacing,
